@@ -20,6 +20,32 @@ Build requirements:
 - Java 21
 - Maven 3
 
+Build command:
+```bash
+mvn clean package
+```
+
+The plugin jar will be created at:
+`target/netherview-3.0.0.jar`
+
+### IntelliJ build notes (important)
+If you build with IntelliJ's **Build Artifacts** feature, do **not** use an "exploded" artifact for Paper plugins.
+Paper expects a real `.jar` file that contains `plugin.yml` (or `paper-plugin.yml`) at the root of the archive.
+
+Recommended IntelliJ workflow:
+1. Open the Maven tool window.
+2. Run **Lifecycle -> clean**.
+3. Run **Lifecycle -> package**.
+4. Copy `target/netherview-3.0.0.jar` into your server `plugins/` folder.
+5. Delete any stale remapped directory for this plugin if it exists (for example `plugins/.paper-remapped/netherview-3.0.0.jar/` when it is a folder).
+6. Start the server again.
+
+Quick validation command (from repo root):
+```bash
+jar tf target/netherview-3.0.0.jar | rg "plugin.yml|paper-plugin.yml"
+```
+This should print `plugin.yml`.
+
 ### Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

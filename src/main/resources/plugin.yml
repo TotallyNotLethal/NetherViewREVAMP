@@ -26,4 +26,4 @@ permissions:
     netherview.portalwand:
         default: op
     netherview.customportals:
-        defult: op
+        default: op
