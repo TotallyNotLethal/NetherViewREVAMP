@@ -1,6 +1,6 @@
 name: NetherView
 version: ${project.version}
-api-version: 1.13
+api-version: 1.21
 
 main: me.gorgeousone.netherview.NetherViewPlugin
 

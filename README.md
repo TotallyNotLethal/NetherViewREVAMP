@@ -13,8 +13,12 @@ The latest releases can be downloaded here: [spigotmc.org](https://www.spigotmc.
 Nether View uses Maven 3 to manage dependencies.
 
 Required libraries:
-- Bukkit
-- ProtocolLib
+- Paper/Spigot API 1.21.x
+- ProtocolLib 5.x
+
+Build requirements:
+- Java 21
+- Maven 3
 
 ### Contributing
 

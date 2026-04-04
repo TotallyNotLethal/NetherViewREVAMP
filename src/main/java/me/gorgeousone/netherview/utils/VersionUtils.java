@@ -6,12 +6,11 @@ public final class VersionUtils {
 	
 	private VersionUtils() {}
 	
-	public static final String VERSION_STRING = Bukkit.getServer().getClass().getName().split("\\.")[3];
-	private static final int[] CURRENT_VERSION_INTS = new int[3];
+	public static final String VERSION_STRING = getServerVersionToken();
+	private static final int[] CURRENT_VERSION_INTS;
 	
 	static {
-		String versionStringNumbersOnly = VERSION_STRING.replaceAll("[a-zA-Z]", "");
-		System.arraycopy(getVersionAsIntArray(versionStringNumbersOnly, "_"), 0, CURRENT_VERSION_INTS, 0, 3);
+		CURRENT_VERSION_INTS = getVersionAsIntArray(Bukkit.getMinecraftVersion(), "\\.");
 	}
 	
 	public static final boolean IS_LEGACY_SERVER = !serverIsAtOrAbove("1.13.0");
@@ -39,9 +38,11 @@ public final class VersionUtils {
 		
 		int[] requestedVersionInts = getVersionAsIntArray(requestedVersion, "\\.");
 		
-		for (int i = 0; i < requestedVersionInts.length; i++) {
+		for (int i = 0; i < Math.max(requestedVersionInts.length, CURRENT_VERSION_INTS.length); i++) {
 			
-			int versionDiff = requestedVersionInts[i] - CURRENT_VERSION_INTS[i];
+			int requestedPart = i < requestedVersionInts.length ? requestedVersionInts[i] : 0;
+			int currentPart = i < CURRENT_VERSION_INTS.length ? CURRENT_VERSION_INTS[i] : 0;
+			int versionDiff = requestedPart - currentPart;
 			
 			if (versionDiff > 0) {
 				return false;
@@ -56,11 +57,6 @@ public final class VersionUtils {
 	private static int[] getVersionAsIntArray(String version, String delimiter) {
 		
 		String[] split = version.split(delimiter);
-		
-		if (split.length > 3) {
-			throw new IllegalArgumentException("Cannot process awfully long version string \"" + version + "\".");
-		}
-		
 		int[] versionInts = new int[split.length];
 		
 		for (int i = 0; i < versionInts.length; i++) {
@@ -68,5 +64,11 @@ public final class VersionUtils {
 		}
 		
 		return versionInts;
+	}
+
+	private static String getServerVersionToken() {
+
+		String[] splitClassName = Bukkit.getServer().getClass().getName().split("\\.");
+		return splitClassName.length > 3 ? splitClassName[3] : "UNKNOWN";
 	}
 }
