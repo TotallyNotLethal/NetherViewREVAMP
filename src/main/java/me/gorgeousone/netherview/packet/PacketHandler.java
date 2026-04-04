@@ -306,12 +306,23 @@ public class PacketHandler {
 		sendPacket(player, destroyPacket);
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	private void writeEntityDestroyIds(PacketContainer destroyPacket, int[] entityIds) {
 		
 		if (destroyPacket.getIntegerArrays().size() > 0) {
 			destroyPacket.getIntegerArrays().write(0, entityIds);
 			return;
+		}
+		
+		try {
+			Class<?> intListClass = Class.forName("it.unimi.dsi.fastutil.ints.IntList");
+			Object intList = Class.forName("it.unimi.dsi.fastutil.ints.IntArrayList")
+				.getConstructor(int[].class)
+				.newInstance((Object) entityIds);
+			destroyPacket.getSpecificModifier((Class) intListClass).write(0, intList);
+			return;
+		} catch (ReflectiveOperationException ignored) {
+			// Some server/protocol combinations still use a plain List<Integer> field instead.
 		}
 		
 		List<Integer> boxedEntityIds = Arrays.stream(entityIds).boxed().collect(Collectors.toList());

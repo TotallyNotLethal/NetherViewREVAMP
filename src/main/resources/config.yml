@@ -4,7 +4,7 @@ max-portal-size: 5
 
 hide-entities-behind-portals: true
 show-entities-inside-portals: true
-entity-update-ticks: 3
+entity-update-ticks: 1
 
 warning-messages: true
 debug-messages: false
