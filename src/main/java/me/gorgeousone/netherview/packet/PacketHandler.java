@@ -9,6 +9,7 @@ import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import com.comphenix.protocol.wrappers.Pair;
+import com.comphenix.protocol.wrappers.WrappedDataValue;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import me.gorgeousone.netherview.blockcache.Transform;
@@ -40,6 +41,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Handler class for creating and managing multi block change packets via ProtocolLib
@@ -272,7 +274,7 @@ public class PacketHandler {
 		}
 		
 		PacketContainer destroyPacket = protocolManager.createPacket(PacketType.Play.Server.ENTITY_DESTROY);
-		destroyPacket.getIntegerArrays().write(0, entityIds);
+		writeEntityDestroyIds(destroyPacket, entityIds);
 		sendPacket(player, destroyPacket);
 	}
 	
@@ -281,7 +283,7 @@ public class PacketHandler {
 		int[] entityIds = new int[]{entity.getFakeId()};
 		
 		PacketContainer destroyPacket = protocolManager.createPacket(PacketType.Play.Server.ENTITY_DESTROY);
-		destroyPacket.getIntegerArrays().write(0, entityIds);
+		writeEntityDestroyIds(destroyPacket, entityIds);
 		sendPacket(player, destroyPacket);
 	}
 	
@@ -300,8 +302,20 @@ public class PacketHandler {
 		}
 		
 		PacketContainer destroyPacket = protocolManager.createPacket(PacketType.Play.Server.ENTITY_DESTROY);
-		destroyPacket.getIntegerArrays().write(0, entityIds);
+		writeEntityDestroyIds(destroyPacket, entityIds);
 		sendPacket(player, destroyPacket);
+	}
+
+	@SuppressWarnings("unchecked")
+	private void writeEntityDestroyIds(PacketContainer destroyPacket, int[] entityIds) {
+		
+		if (destroyPacket.getIntegerArrays().size() > 0) {
+			destroyPacket.getIntegerArrays().write(0, entityIds);
+			return;
+		}
+		
+		List<Integer> boxedEntityIds = Arrays.stream(entityIds).boxed().collect(Collectors.toList());
+		destroyPacket.getSpecificModifier(List.class).write(0, boxedEntityIds);
 	}
 	
 	public void showEntities(Player player, Set<Entity> visibleEntities) {
@@ -499,7 +513,19 @@ public class PacketHandler {
 		PacketContainer metadataPacket = protocolManager.createPacket(PacketType.Play.Server.ENTITY_METADATA);
 		metadataPacket.getIntegers().write(0, entity.getEntityId());
 		WrappedDataWatcher watcher = WrappedDataWatcher.getEntityWatcher(entity);
-		metadataPacket.getWatchableCollectionModifier().write(0, watcher.getWatchableObjects());
+		
+		if (metadataPacket.getDataValueCollectionModifier().size() > 0) {
+			List<WrappedDataValue> dataValues = watcher.getWatchableObjects().stream()
+					.map(watchableObject -> new WrappedDataValue(
+							watchableObject.getIndex(),
+							watchableObject.getWatcherObject().getSerializer(),
+							watchableObject.getRawValue()))
+					.collect(Collectors.toList());
+			metadataPacket.getDataValueCollectionModifier().write(0, dataValues);
+		} else {
+			metadataPacket.getWatchableCollectionModifier().write(0, watcher.getWatchableObjects());
+		}
+		
 		return metadataPacket;
 	}
 	
