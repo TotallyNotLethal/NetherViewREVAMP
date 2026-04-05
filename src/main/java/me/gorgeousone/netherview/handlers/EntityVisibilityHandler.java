@@ -228,19 +228,14 @@ public class EntityVisibilityHandler {
 				Location newEntityLoc = entity.getEntity().getLocation();
 				Location lastEntityLoc = entity.getLastLoc();
 				
-				Location projectedMovement = new Location(
-						newEntityLoc.getWorld(),
-						newEntityLoc.getX() - lastEntityLoc.getX(),
-						newEntityLoc.getY() - lastEntityLoc.getY(),
-						newEntityLoc.getZ() - lastEntityLoc.getZ());
-				linkTransform.rotateVec(projectedMovement.toVector());
+				Location projectedMovement = linkTransform.rotateLoc(newEntityLoc.clone().subtract(lastEntityLoc));
 				
 				packetHandler.sendEntityMoveLook(
 						session.getPlayer(),
 						entity,
 						projectedMovement.toVector(),
-						linkTransform.rotateYaw(newEntityLoc.getYaw()),
-						newEntityLoc.getPitch(),
+						projectedMovement.getYaw(),
+						projectedMovement.getPitch(),
 						entity.getEntity().isOnGround());
 				
 			} else {
