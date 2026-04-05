@@ -27,7 +27,6 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Hanging;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Painting;
@@ -408,8 +407,6 @@ public class PacketHandler {
 						sendPacket(player, createHeadRotation(entityId, entityLoc.getYaw()));
 						showEquipment(player, (LivingEntity) entity, entityId, isProjection);
 						
-					} else if (entity instanceof Hanging) {
-						sendPacket(player, createHangingPacket((Hanging) entity, entityLoc, entityId, entityUuid, transform));
 					} else {
 						sendPacket(player, createEntityPacket(entity, entityLoc, entityId, entityUuid));
 					}
@@ -426,9 +423,7 @@ public class PacketHandler {
 			return;
 		}
 		
-		WrappedGameProfile profile = shownPlayer instanceof Player ?
-				WrappedGameProfile.fromPlayer((Player) shownPlayer) :
-				new WrappedGameProfile(shownUuid, shownPlayer.getName());
+		WrappedGameProfile profile = new WrappedGameProfile(shownUuid, shownPlayer.getName());
 		List<PlayerInfoData> infoData = Collections.singletonList(new PlayerInfoData(profile, 0, EnumWrappers.NativeGameMode.fromBukkit(shownPlayer.getGameMode()), null));
 		
 		try {
@@ -539,27 +534,6 @@ public class PacketHandler {
 		BlockPosition blockPosition = new BlockPosition(location.toVector()).subtract(new BlockPosition(0, halfHeight, 0));
 		
 		BlockFace rotatedFace = FacingUtils.getRotatedFace(painting.getFacing(), transform.getQuarterTurns());
-		EnumWrappers.Direction rotatedDirection = FacingUtils.getBlockFaceToDirection(rotatedFace);
-		
-		spawnPacket.getBlockPositionModifier().write(0, blockPosition);
-		spawnPacket.getDirections().write(0, rotatedDirection);
-		
-		return spawnPacket;
-	}
-
-	private PacketContainer createHangingPacket(Hanging hanging,
-	                                            Location location,
-	                                            int entityId,
-	                                            UUID entityUuid,
-	                                            Transform transform) {
-		PacketContainer spawnPacket = createEntityPacket(hanging, location, entityId, entityUuid);
-		
-		if (spawnPacket.getBlockPositionModifier().size() == 0 || spawnPacket.getDirections().size() == 0) {
-			return spawnPacket;
-		}
-		
-		BlockPosition blockPosition = new BlockPosition(location.toVector());
-		BlockFace rotatedFace = FacingUtils.getRotatedFace(hanging.getFacing(), transform.getQuarterTurns());
 		EnumWrappers.Direction rotatedDirection = FacingUtils.getBlockFaceToDirection(rotatedFace);
 		
 		spawnPacket.getBlockPositionModifier().write(0, blockPosition);
