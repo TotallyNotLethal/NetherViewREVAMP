@@ -399,7 +399,7 @@ public class BlockChangeListener implements Listener {
 	private void onAnyGrowEvent(BlockGrowEvent event) {
 		
 		Block block = event.getBlock();
-		updateBlockCaches(block, BlockType.of(event.getNewState()), block.getType().isOccluding());
+		updateBlockCaches(block, getSafeBlockType(event.getNewState()), block.getType().isOccluding());
 	}
 	
 	//pumpkin/melon growing
@@ -425,7 +425,21 @@ public class BlockChangeListener implements Listener {
 	public void onBlockFade(BlockFadeEvent event) {
 		
 		Block block = event.getBlock();
-		updateBlockCaches(block, BlockType.of(event.getNewState()), block.getType().isOccluding());
+		updateBlockCaches(block, getSafeBlockType(event.getNewState()), block.getType().isOccluding());
+	}
+
+	/**
+	 * Some server versions can throw ArrayIndexOutOfBoundsException when reading legacy MaterialData
+	 * from BlockState#getData() for certain transitional states used by fade/spread/grow events.
+	 * Falling back to the block material keeps cache updates stable and avoids event spam.
+	 */
+	private BlockType getSafeBlockType(BlockState newState) {
+		
+		try {
+			return BlockType.of(newState);
+		} catch (ArrayIndexOutOfBoundsException ignored) {
+			return BlockType.of(newState.getType());
+		}
 	}
 	
 	//falling sand and maybe endermen (actually also sheep but that doesn't work)
