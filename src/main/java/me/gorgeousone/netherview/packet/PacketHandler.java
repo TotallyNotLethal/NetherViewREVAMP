@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -341,6 +342,26 @@ public class PacketHandler {
 	                       int entityId,
 	                       Transform transform,
 	                       boolean isProjection) {
+		showEntity(player, entity, entityId, isProjection ? UUID.randomUUID() : entity.getUniqueId(), transform, isProjection);
+	}
+
+	public void showProjectedEntity(Player player,
+	                                ProjectionEntity projectionEntity,
+	                                Transform transform) {
+		showEntity(player,
+		           projectionEntity.getEntity(),
+		           projectionEntity.getFakeId(),
+		           projectionEntity.getFakeUuid(),
+		           transform,
+		           true);
+	}
+
+	private void showEntity(Player player,
+	                        Entity entity,
+	                        int entityId,
+	                        UUID entityUuid,
+	                        Transform transform,
+	                        boolean isProjection) {
 		
 		if (entity == null || entity.isDead()) {
 			return;
@@ -360,7 +381,7 @@ public class PacketHandler {
 				
 				case PLAYER:
 					
-					sendPacket(player, createPlayerPacket((HumanEntity) entity, entityLoc, entityId));
+					sendPacket(player, createPlayerPacket((HumanEntity) entity, entityLoc, entityId, entityUuid));
 					sendPacket(player, createHeadRotation(entity, entityLoc.getYaw()));
 					showEquipment(player, (LivingEntity) entity, entityId, isProjection);
 					break;
@@ -369,16 +390,16 @@ public class PacketHandler {
 					
 					if (entity instanceof LivingEntity) {
 						
-						sendPacket(player, createEntityLivingPacket((LivingEntity) entity, entityLoc, entityId));
+						sendPacket(player, createEntityLivingPacket((LivingEntity) entity, entityLoc, entityId, entityUuid));
 						sendPacket(player, createHeadRotation(entity, entityLoc.getYaw()));
 						showEquipment(player, (LivingEntity) entity, entityId, isProjection);
 						
 					} else {
-						sendPacket(player, createEntityPacket(entity, entityLoc, entityId));
+						sendPacket(player, createEntityPacket(entity, entityLoc, entityId, entityUuid));
 					}
 			}
 			
-		sendPacket(player, createMetadataPacket(entity));
+		sendPacket(player, createMetadataPacket(entity, entityId));
 	}
 	
 	private PacketContainer createHeadRotation(Entity entity,
@@ -393,28 +414,30 @@ public class PacketHandler {
 	
 	private PacketContainer createPlayerPacket(HumanEntity player,
 	                                           Location entityLoc,
-	                                           int entityId) {
+	                                           int entityId,
+	                                           UUID entityUuid) {
 		
 		try {
 			PacketContainer spawnPacket = protocolManager.createPacket(PacketType.Play.Server.NAMED_ENTITY_SPAWN);
 			spawnPacket.getIntegers().write(0, entityId);
-			spawnPacket.getUUIDs().write(0, player.getUniqueId());
+			spawnPacket.getUUIDs().write(0, entityUuid);
 			writeEntityPos(spawnPacket, entityLoc, true, false);
 			return spawnPacket;
 		} catch (IllegalArgumentException ignored) {
 			// NAMED_ENTITY_SPAWN does not exist on newer protocol versions anymore.
 			// Fall back to the generic spawn packet format that includes EntityType.PLAYER.
-			return createEntityPacket(player, entityLoc, entityId);
+			return createEntityPacket(player, entityLoc, entityId, entityUuid);
 		}
 	}
 	
 	private PacketContainer createEntityPacket(Entity entity,
 	                                           Location entityLoc,
-	                                           int entityId) {
+	                                           int entityId,
+	                                           UUID entityUuid) {
 		PacketContainer spawnPacket = protocolManager.createPacket(PacketType.Play.Server.SPAWN_ENTITY);
 		
 		spawnPacket.getIntegers().write(0, entityId);
-		spawnPacket.getUUIDs().write(0, entity.getUniqueId());
+		spawnPacket.getUUIDs().write(0, entityUuid);
 		spawnPacket.getEntityTypeModifier().write(0, entity.getType());
 		writeEntityPos(spawnPacket, entityLoc, false, false);
 		return spawnPacket;
@@ -422,15 +445,16 @@ public class PacketHandler {
 	
 	private PacketContainer createEntityLivingPacket(LivingEntity entity,
 	                                                 Location entityLoc,
-	                                                 int entityId) {
-		return createEntityPacket(entity, entityLoc, entityId);
+	                                                 int entityId,
+	                                                 UUID entityUuid) {
+		return createEntityPacket(entity, entityLoc, entityId, entityUuid);
 	}
 	
 	private PacketContainer createPaintingPacket(Painting painting,
 	                                             Location location,
 	                                             int entityId,
 	                                             Transform transform) {
-		PacketContainer spawnPacket = createEntityPacket(painting, location, entityId);
+		PacketContainer spawnPacket = createEntityPacket(painting, location, entityId, painting.getUniqueId());
 		
 		int halfHeight = (int) (WrappedBoundingBox.of(painting).getHeight() / 2);
 		BlockPosition blockPosition = new BlockPosition(location.toVector()).subtract(new BlockPosition(0, halfHeight, 0));
@@ -526,9 +550,9 @@ public class PacketHandler {
 		sendPacket(player, headRotPacket);
 	}
 	
-	private PacketContainer createMetadataPacket(Entity entity) {
+	private PacketContainer createMetadataPacket(Entity entity, int entityId) {
 		PacketContainer metadataPacket = protocolManager.createPacket(PacketType.Play.Server.ENTITY_METADATA);
-		metadataPacket.getIntegers().write(0, entity.getEntityId());
+		metadataPacket.getIntegers().write(0, entityId);
 		WrappedDataWatcher watcher = WrappedDataWatcher.getEntityWatcher(entity);
 		
 		if (metadataPacket.getDataValueCollectionModifier().size() > 0) {
