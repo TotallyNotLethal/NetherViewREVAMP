@@ -393,9 +393,7 @@ public class PacketHandler {
 					
 					sendPlayerInfoAdd(player, (HumanEntity) entity, entityUuid);
 					sendPacket(player, createPlayerPacket((HumanEntity) entity, entityLoc, entityId, entityUuid));
-					if (!isProjection) {
-						sendPacket(player, createHeadRotation(entityId, entityLoc.getYaw()));
-					}
+					sendPacket(player, createHeadRotation(entityId, entityLoc.getYaw()));
 					showEquipment(player, (LivingEntity) entity, entityId, isProjection);
 					if (isProjection && !entityUuid.equals(entity.getUniqueId())) {
 						sendPlayerInfoRemove(player, entityUuid);
@@ -407,9 +405,7 @@ public class PacketHandler {
 					if (entity instanceof LivingEntity) {
 						
 						sendPacket(player, createEntityLivingPacket((LivingEntity) entity, entityLoc, entityId, entityUuid));
-						if (!isProjection) {
-							sendPacket(player, createHeadRotation(entityId, entityLoc.getYaw()));
-						}
+						sendPacket(player, createHeadRotation(entityId, entityLoc.getYaw()));
 						showEquipment(player, (LivingEntity) entity, entityId, isProjection);
 						
 					} else if (entity instanceof Hanging) {
@@ -430,24 +426,12 @@ public class PacketHandler {
 			return;
 		}
 		
-		WrappedGameProfile profile = new WrappedGameProfile(shownUuid, shownPlayer.getName());
-		
-		if (shownPlayer instanceof Player) {
-			try {
-				WrappedGameProfile sourceProfile = WrappedGameProfile.fromPlayer((Player) shownPlayer);
-				profile.getProperties().putAll(sourceProfile.getProperties());
-			} catch (Exception ignored) {
-				// Some protocol/profile implementations no longer expose getId(); keep the fallback profile.
-			}
-		}
+		WrappedGameProfile profile = shownPlayer instanceof Player ?
+				WrappedGameProfile.fromPlayer((Player) shownPlayer) :
+				new WrappedGameProfile(shownUuid, shownPlayer.getName());
+		List<PlayerInfoData> infoData = Collections.singletonList(new PlayerInfoData(profile, 0, EnumWrappers.NativeGameMode.fromBukkit(shownPlayer.getGameMode()), null));
 		
 		try {
-			List<PlayerInfoData> infoData = Collections.singletonList(new PlayerInfoData(
-					profile,
-					0,
-					EnumWrappers.NativeGameMode.fromBukkit(shownPlayer.getGameMode()),
-					null));
-			
 			if (infoPacket.getPlayerInfoActions().size() > 0) {
 				infoPacket.getPlayerInfoActions().write(0, EnumSet.of(EnumWrappers.PlayerInfoAction.ADD_PLAYER));
 				infoPacket.getPlayerInfoDataLists().write(0, infoData);
@@ -534,7 +518,7 @@ public class PacketHandler {
 		spawnPacket.getIntegers().write(0, entityId);
 		spawnPacket.getUUIDs().write(0, entityUuid);
 		spawnPacket.getEntityTypeModifier().write(0, entity.getType());
-		writeEntityPos(spawnPacket, entityLoc, false, false);
+		writeEntityPos(spawnPacket, entityLoc, true, false);
 		return spawnPacket;
 	}
 	
