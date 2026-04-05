@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 
 import java.util.Random;
+import java.util.UUID;
 
 public class ProjectionEntity {
 	
@@ -11,6 +12,7 @@ public class ProjectionEntity {
 	
 	private final Entity entity;
 	private final int fakeId;
+	private final UUID fakeUuid;
 	private Location lastLoc;
 	
 	public ProjectionEntity(Entity entity) {
@@ -18,6 +20,7 @@ public class ProjectionEntity {
 		this.entity = entity;
 		//chances to match an existing id are like 10,000/2,000,000,000 which is 0,0005%. hope that's enough
 		this.fakeId = RANDOM.nextInt();
+		this.fakeUuid = UUID.randomUUID();
 	}
 	
 	public Entity getEntity() {
@@ -26,6 +29,10 @@ public class ProjectionEntity {
 	
 	public int getFakeId() {
 		return fakeId;
+	}
+
+	public UUID getFakeUuid() {
+		return fakeUuid;
 	}
 	
 	public Location getLastLoc() {

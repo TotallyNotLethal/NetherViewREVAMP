@@ -134,7 +134,7 @@ public class ViewHandler {
 	public void projectEntity(Player player, ProjectionEntity projectionEntity, Transform transform) {
 		
 		getViewSession(player).getProjectedEntities().add(projectionEntity);
-		packetHandler.showEntity(player, projectionEntity.getEntity(), projectionEntity.getFakeId(), transform, true);
+		packetHandler.showProjectedEntity(player, projectionEntity, transform);
 	}
 	
 	public void destroyProjectedEntity(Player player, ProjectionEntity entity) {
