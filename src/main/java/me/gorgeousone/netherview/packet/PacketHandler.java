@@ -38,7 +38,6 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -352,15 +351,10 @@ public class PacketHandler {
 	public void showProjectedEntity(Player player,
 	                                ProjectionEntity projectionEntity,
 	                                Transform transform) {
-		Entity entity = projectionEntity.getEntity();
-		UUID projectedUuid = entity.getType() == org.bukkit.entity.EntityType.PLAYER ?
-				entity.getUniqueId() :
-				projectionEntity.getFakeUuid();
-
 		showEntity(player,
-		           entity,
+		           projectionEntity.getEntity(),
 		           projectionEntity.getFakeId(),
-		           projectedUuid,
+		           projectionEntity.getFakeUuid(),
 		           transform,
 		           true);
 	}
@@ -392,9 +386,9 @@ public class PacketHandler {
 					
 					sendPlayerInfoAdd(player, (HumanEntity) entity, entityUuid);
 					sendPacket(player, createPlayerPacket((HumanEntity) entity, entityLoc, entityId, entityUuid));
-					sendPacket(player, createHeadRotation(entityId, entityLoc.getYaw()));
+					sendPacket(player, createHeadRotation(entity, entityLoc.getYaw()));
 					showEquipment(player, (LivingEntity) entity, entityId, isProjection);
-					if (isProjection && !entityUuid.equals(entity.getUniqueId())) {
+					if (isProjection) {
 						sendPlayerInfoRemove(player, entityUuid);
 					}
 					break;
@@ -404,7 +398,7 @@ public class PacketHandler {
 					if (entity instanceof LivingEntity) {
 						
 						sendPacket(player, createEntityLivingPacket((LivingEntity) entity, entityLoc, entityId, entityUuid));
-						sendPacket(player, createHeadRotation(entityId, entityLoc.getYaw()));
+						sendPacket(player, createHeadRotation(entity, entityLoc.getYaw()));
 						showEquipment(player, (LivingEntity) entity, entityId, isProjection);
 						
 					} else {
@@ -476,12 +470,12 @@ public class PacketHandler {
 		return null;
 	}
 	
-	private PacketContainer createHeadRotation(int entityId,
+	private PacketContainer createHeadRotation(Entity entity,
 	                                           float yaw) {
 		
-		byte byteYaw = (byte) (yaw * 256 / 360);
+		byte byteYaw = (byte) (yaw * 265 / 360);
 		PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.ENTITY_HEAD_ROTATION);
-		packet.getIntegers().write(0, entityId);
+		packet.getIntegers().write(0, entity.getEntityId());
 		packet.getBytes().write(0, byteYaw);
 		return packet;
 	}
@@ -513,7 +507,7 @@ public class PacketHandler {
 		spawnPacket.getIntegers().write(0, entityId);
 		spawnPacket.getUUIDs().write(0, entityUuid);
 		spawnPacket.getEntityTypeModifier().write(0, entity.getType());
-		writeEntityPos(spawnPacket, entityLoc, true, false);
+		writeEntityPos(spawnPacket, entityLoc, false, false);
 		return spawnPacket;
 	}
 	
@@ -563,11 +557,11 @@ public class PacketHandler {
 			return;
 		}
 		
-		byte yawByte = (byte) (int) (entityLoc.getYaw() * 256 / 360);
+		byte yawByte = (byte) (int) (entityLoc.getYaw() * 265 / 360);
 		
 		spawnPacket.getBytes()
 				.write(0, yawByte)
-				.write(1, (byte) (int) (entityLoc.getPitch() * 256 / 360));
+				.write(1, (byte) (int) (entityLoc.getPitch() * 265 / 360));
 		
 		if (writeHeadYaw) {
 			spawnPacket.getBytes().write(2, yawByte);
@@ -618,7 +612,7 @@ public class PacketHandler {
 		
 		PacketContainer headRotPacket = protocolManager.createPacket(PacketType.Play.Server.ENTITY_HEAD_ROTATION);
 		headRotPacket.getIntegers().write(0, entity.getFakeId());
-		headRotPacket.getBytes().write(0, (byte) (int) (newYaw * 256 / 360));
+		headRotPacket.getBytes().write(0, (byte) (int) (newYaw * 265 / 360));
 		
 		sendPacket(player, moveLookPacket);
 		sendPacket(player, headRotPacket);
