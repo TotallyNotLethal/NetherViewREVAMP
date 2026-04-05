@@ -9,6 +9,7 @@ import me.gorgeousone.netherview.packet.PacketHandler;
 import me.gorgeousone.netherview.portal.ProjectionEntity;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -165,7 +166,7 @@ public class EntityVisibilityHandler {
 		for (ProjectionEntity entityProjection : new HashSet<>(session.getProjectedEntities())) {
 			
 			if (!newEntities.contains(entityProjection) || !session.isVisibleInProjection(entityProjection.getEntity())) {
-				viewHandler.destroyProjectedEntity(session, entityProjection);
+				viewHandler.destroyProjectedEntity(session.getPlayer(), entityProjection);
 			}
 		}
 	}
@@ -175,7 +176,7 @@ public class EntityVisibilityHandler {
 		for (ProjectionEntity entityProjection : newEntities) {
 			
 			if (!session.getProjectedEntities().contains(entityProjection) && session.isVisibleInProjection(entityProjection.getEntity())) {
-				viewHandler.projectEntity(session, entityProjection, session.getViewedPortalSide().getLinkTransform());
+				viewHandler.projectEntity(session.getPlayer(), entityProjection, session.getViewedPortalSide().getLinkTransform());
 			}
 		}
 	}
@@ -205,6 +206,7 @@ public class EntityVisibilityHandler {
 	
 	private void displayEntityMovements(PlayerViewSession session, Map<ProjectionEntity, Location> movedEntities) {
 		
+		Player player = session.getPlayer();
 		ProjectionCache projection = session.getViewedPortalSide();
 		Transform linkTransform = projection.getLinkTransform();
 		Set<ProjectionEntity> projectedEntities = session.getProjectedEntities();
@@ -216,7 +218,7 @@ public class EntityVisibilityHandler {
 			if (!projectedEntities.contains(entity)) {
 				
 				if (entityIsVisibleInProjection) {
-					viewHandler.projectEntity(session, entity, linkTransform);
+					viewHandler.projectEntity(session.getPlayer(), entity, linkTransform);
 				}
 				continue;
 			}
@@ -237,7 +239,7 @@ public class EntityVisibilityHandler {
 						entity.getEntity().isOnGround());
 				
 			} else {
-				viewHandler.destroyProjectedEntity(session, entity);
+				viewHandler.destroyProjectedEntity(player, entity);
 			}
 		}
 	}
@@ -247,7 +249,7 @@ public class EntityVisibilityHandler {
 		for (Entity entity : new HashSet<>(session.getHiddenEntities())) {
 			
 			if (!session.isHiddenBehindProjection(entity)) {
-				viewHandler.showEntity(session, entity);
+				viewHandler.showEntity(session.getPlayer(), entity);
 			}
 		}
 	}
@@ -257,7 +259,7 @@ public class EntityVisibilityHandler {
 		for (Entity entity : newEntities) {
 			
 			if (!session.getHiddenEntities().contains(entity) && session.isHiddenBehindProjection(entity)) {
-				viewHandler.hideEntity(session, entity);
+				viewHandler.hideEntity(session.getPlayer(), entity);
 			}
 		}
 	}
