@@ -12,6 +12,8 @@ import com.comphenix.protocol.wrappers.Pair;
 import com.comphenix.protocol.wrappers.WrappedDataValue;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
+import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.wrappers.PlayerInfoData;
 import me.gorgeousone.netherview.blockcache.Transform;
 import me.gorgeousone.netherview.geometry.BlockVec;
 import me.gorgeousone.netherview.portal.ProjectionEntity;
@@ -43,6 +45,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.EnumSet;
 
 /**
  * Handler class for creating and managing multi block change packets via ProtocolLib
@@ -381,9 +384,13 @@ public class PacketHandler {
 				
 				case PLAYER:
 					
+					sendPlayerInfoAdd(player, (HumanEntity) entity, entityUuid);
 					sendPacket(player, createPlayerPacket((HumanEntity) entity, entityLoc, entityId, entityUuid));
 					sendPacket(player, createHeadRotation(entity, entityLoc.getYaw()));
 					showEquipment(player, (LivingEntity) entity, entityId, isProjection);
+					if (isProjection) {
+						sendPlayerInfoRemove(player, entityUuid);
+					}
 					break;
 				
 				default:
@@ -400,6 +407,67 @@ public class PacketHandler {
 			}
 			
 		sendPacket(player, createMetadataPacket(entity, entityId));
+	}
+
+	private void sendPlayerInfoAdd(Player viewer, HumanEntity shownPlayer, UUID shownUuid) {
+		
+		PacketContainer infoPacket = createPlayerInfoPacket("PLAYER_INFO_UPDATE", "PLAYER_INFO");
+		
+		if (infoPacket == null) {
+			return;
+		}
+		
+		WrappedGameProfile profile = new WrappedGameProfile(shownUuid, shownPlayer.getName());
+		List<PlayerInfoData> infoData = Collections.singletonList(new PlayerInfoData(profile, 0, EnumWrappers.NativeGameMode.fromBukkit(shownPlayer.getGameMode()), null));
+		
+		try {
+			if (infoPacket.getPlayerInfoActions().size() > 0) {
+				infoPacket.getPlayerInfoActions().write(0, EnumSet.of(EnumWrappers.PlayerInfoAction.ADD_PLAYER));
+				infoPacket.getPlayerInfoDataLists().write(0, infoData);
+			} else {
+				infoPacket.getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.ADD_PLAYER);
+				infoPacket.getPlayerInfoDataLists().write(0, infoData);
+			}
+			sendPacket(viewer, infoPacket);
+		} catch (Exception ignored) {
+			// Protocol format differs across versions; failing this packet is non-fatal.
+		}
+	}
+
+	private void sendPlayerInfoRemove(Player viewer, UUID shownUuid) {
+		
+		PacketContainer removePacket = createPlayerInfoPacket("PLAYER_INFO_REMOVE", "PLAYER_INFO");
+		
+		if (removePacket == null) {
+			return;
+		}
+		
+		try {
+			if (removePacket.getUUIDLists().size() > 0) {
+				removePacket.getUUIDLists().write(0, Collections.singletonList(shownUuid));
+			} else {
+				removePacket.getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.REMOVE_PLAYER);
+				WrappedGameProfile profile = new WrappedGameProfile(shownUuid, "");
+				removePacket.getPlayerInfoDataLists().write(0, Collections.singletonList(new PlayerInfoData(profile, 0, null, null)));
+			}
+			sendPacket(viewer, removePacket);
+		} catch (Exception ignored) {
+			// Protocol format differs across versions; failing this packet is non-fatal.
+		}
+	}
+
+	private PacketContainer createPlayerInfoPacket(String... packetTypeNames) {
+		
+		for (String packetTypeName : packetTypeNames) {
+			try {
+				PacketType packetType = (PacketType) PacketType.Play.Server.class.getField(packetTypeName).get(null);
+				return protocolManager.createPacket(packetType);
+			} catch (Exception ignored) {
+				// Packet type does not exist on this protocol version.
+			}
+		}
+		
+		return null;
 	}
 	
 	private PacketContainer createHeadRotation(Entity entity,
