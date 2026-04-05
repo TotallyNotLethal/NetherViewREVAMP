@@ -395,11 +395,17 @@ public class PacketHandler {
 	                                           Location entityLoc,
 	                                           int entityId) {
 		
-		PacketContainer spawnPacket = protocolManager.createPacket(PacketType.Play.Server.NAMED_ENTITY_SPAWN);
-		spawnPacket.getIntegers().write(0, entityId);
-		spawnPacket.getUUIDs().write(0, player.getUniqueId());
-		writeEntityPos(spawnPacket, entityLoc, true, false);
-		return spawnPacket;
+		try {
+			PacketContainer spawnPacket = protocolManager.createPacket(PacketType.Play.Server.NAMED_ENTITY_SPAWN);
+			spawnPacket.getIntegers().write(0, entityId);
+			spawnPacket.getUUIDs().write(0, player.getUniqueId());
+			writeEntityPos(spawnPacket, entityLoc, true, false);
+			return spawnPacket;
+		} catch (IllegalArgumentException ignored) {
+			// NAMED_ENTITY_SPAWN does not exist on newer protocol versions anymore.
+			// Fall back to the generic spawn packet format that includes EntityType.PLAYER.
+			return createEntityPacket(player, entityLoc, entityId);
+		}
 	}
 	
 	private PacketContainer createEntityPacket(Entity entity,
